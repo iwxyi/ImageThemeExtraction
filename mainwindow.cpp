@@ -27,6 +27,11 @@ void MainWindow::on_pushButton_clicked()
     QPixmap pixmap(path);
     ui->label->setPixmap(pixmap);
 
+    ui->listWidget->clear();
     auto colors = ImageUtil::extractImageThemeColors(pixmap.toImage(), 20);
-
+    foreach (auto color, colors)
+    {
+        auto item = new QListWidgetItem(ui->listWidget);
+        item->setBackground(color);
+    }
 }

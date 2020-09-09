@@ -39,17 +39,17 @@ public:
     {
         int count = 0;
         char color[7] = {}; // 16进制字符串
-        char red = 0, green = 0, blue = 0;
+        int red = 0, green = 0, blue = 0;
         int colorValue = 0; // 对应int值
     };
 
     void buildTree(QImage image);
-    void colorStats(OctreeNode *node, QList<ColorCount *> *colors);
-    OctreeNode *getRoot();
+    QList<ColorCount *> result();
 
 private:
     void addColor(OctreeNode *node, RGB* color, int level);
     void reduceTree();
+    void colorStats(OctreeNode *node, QList<ColorCount *> *colors);
 
 private:
     OctreeNode *root;

@@ -52,6 +52,12 @@
       </property>
       <item>
        <widget class="QLabel" name="label">
+        <property name="maximumSize">
+         <size>
+          <width>400</width>
+          <height>400</height>
+         </size>
+        </property>
         <property name="text">
          <string>TextLabel</string>
         </property>

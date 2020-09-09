@@ -3,10 +3,11 @@
 ColorOctree::ColorOctree()
 {
     root = new OctreeNode();
+    memset(root, 0, sizeof(OctreeNode));
     leafCount = 0;
 }
 
-ColorOctree::ColorOctree(QImage image, int maxPool)
+ColorOctree::ColorOctree(QImage image, int maxPool) : ColorOctree()
 {
     // 缩减尺寸
     int hCount = image.width();
@@ -44,6 +45,20 @@ void ColorOctree::buildTree(QImage image)
                 reduceTree();
         }
     }
+}
+
+QList<ColorOctree::ColorCount*> ColorOctree::result()
+{
+    QList<ColorCount*> counts;
+    colorStats(root, &counts);
+    std::sort(counts.begin(), counts.end(), [=](ColorCount *a, ColorCount *b) {
+        if (a->count > b->count)
+            return true;
+        if (a->count < b->count)
+            return false;
+        return strcmp(a->color, b->color) < 0;
+    });
+    return counts;
 }
 
 void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
@@ -158,18 +173,5 @@ void ColorOctree::colorStats(ColorOctree::OctreeNode *node, QList<ColorOctree::C
             colorStats(node->children[i], colors);
         }
     }
-
-    // 排序
-    if (root == node)
-    {
-        std::sort(colors->begin(), colors->end(), [=](ColorCount *a, ColorCount *b) {
-            if (a->count > b->count)
-                return true;
-            if (a->count < b->count)
-                return false;
-            return strcmp(a->color, b->color) < 0;
-        });
-    }
 }
 
-ColorOctree::OctreeNode *ColorOctree::getRoot() { return root; }
