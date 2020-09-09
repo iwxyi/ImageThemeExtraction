@@ -47,13 +47,53 @@ QList<ColorOctree::ColorCount> ImageUtil::extractImageThemeColors(QImage image, 
     if (!result.size() || result.first().count <= 0)
         return result;
 
-    // 过滤太少的颜色
-    /*int maxCount = result.first().count;
+    // 可以过滤太少的颜色，看情况开关
+    int maxCount = result.first().count;
     int minCount = maxCount / 1000; // 小于最大项1‰的都去掉
     while (result.last().count < minCount)
-        result.removeLast();*/
+        result.removeLast();
 
     return result;
+}
+
+/**
+ * 获取图片中的所有主题色
+ * 使用最小差值法一一求差
+ * 然后和调色盘中颜色对比
+ * 取出每种最是相近的颜色
+ */
+QList<QColor> ImageUtil::extractImageThemeColorsInPalette(QImage image, QList<QColor> paletteColors, int needCount)
+{
+    auto octree = ColorOctree(image, IMAGE_CALC_PIXEL_MAX_SIZE, paletteColors.size());
+    auto result = octree.result();
+
+    QList<QColor> colors;
+    for (int i = 0; i < result.size(); i++)
+    {
+        auto cc = result.at(i);
+        QColor nestColor;
+        int minVariance = 255*255*3+1;
+        for (int j = 0; j < paletteColors.size(); j++)
+        {
+            auto qc = paletteColors.at(j);
+
+            // 差值计算：直接计算方差吧
+            int dr = cc.red - qc.red();
+            int dg = cc.green - qc.green();
+            int db = cc.blue - qc.blue();
+            int variance = dr * dr + dg * dg + db * db;
+
+            if (minVariance > variance)
+            {
+                minVariance = variance;
+                nestColor = qc;
+            }
+        }
+        // 找到方差最小的颜色
+        colors.append(nestColor);
+    }
+
+    return colors;
 }
 
 /**

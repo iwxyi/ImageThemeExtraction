@@ -36,7 +36,7 @@ void MainWindow::on_pushButton_clicked()
     {
         auto item = new QListWidgetItem(ui->listWidget);
         QColor qc(color.red, color.green, color.blue);
-        item->setText(QString::number(color.count * 100 / maxCount) + "%");
+        item->setText(QString::number(color.count * 100.0 / maxCount, 'f', 1) + "%");
         item->setBackground(qc);
         item->setForeground(ImageUtil::getInvertColor(qc));
     }

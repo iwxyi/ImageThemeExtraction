@@ -14,6 +14,8 @@ public:
 
     static QList<ColorOctree::ColorCount> extractImageThemeColors(QImage image, int count);
 
+    static QList<QColor> extractImageThemeColorsInPalette(QImage image, QList<QColor> paletteColors, int needCount);
+
     static QColor getInvertColor(QColor color);
 };
 

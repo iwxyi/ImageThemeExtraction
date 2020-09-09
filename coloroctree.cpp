@@ -55,7 +55,9 @@ void ColorOctree::buildTree(QImage image, int maxCount)
             // 但是这结果一模一样……
             while (leafCount > maxCount)
             {
-                // FIXME: 加返回值会影响性能，但是避免了颜色少时死循环的问题
+                // 加返回值会影响性能，但是避免了结果颜色少时死循环的问题
+                // 个人猜测，可能是因为0层全都是叶子节点
+                // 例如7缩减到6时，八叉树第0层有7个叶子节点，无法缩减
                 if (!reduceTree()) // 当 maxCount <= 7 时，很容易触发
                     break;
             }
