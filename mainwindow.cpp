@@ -28,7 +28,7 @@ void MainWindow::on_pushButton_clicked()
     ui->label->setPixmap(pixmap);
 
     ui->listWidget->clear();
-    auto colors = ImageUtil::extractImageThemeColors(pixmap.toImage(), 20);
+    auto colors = ImageUtil::extractImageThemeColors(pixmap.toImage(), 7);
     if (!colors.size())
         return ;
     int maxCount = colors.first().count;

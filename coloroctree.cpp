@@ -2,12 +2,9 @@
 
 ColorOctree::ColorOctree()
 {
-    root = new OctreeNode();
-    memset(root, 0, sizeof(OctreeNode));
-    leafCount = 0;
 }
 
-ColorOctree::ColorOctree(QImage image, int maxSize, int maxCount) : ColorOctree()
+ColorOctree::ColorOctree(QImage image, int maxSize, int maxCount)
 {
     // 缩减尺寸
     long long hCount = image.width();
@@ -34,6 +31,11 @@ ColorOctree::~ColorOctree()
 void ColorOctree::buildTree(QImage image, int maxCount)
 {
     this->maxCount = maxCount;
+    if (root)
+        delete root;
+    root = new OctreeNode();
+    memset(root, 0, sizeof(OctreeNode));
+    leafCount = 0;
 
     // 先转换为颜色，再添加到八叉树节点
     // 据说使用按行读取的方式能加快效率
@@ -52,7 +54,11 @@ void ColorOctree::buildTree(QImage image, int maxCount)
             // 有两个选择：addColor完就减（快），全部add再减（慢）
             // 但是这结果一模一样……
             while (leafCount > maxCount)
-                reduceTree();
+            {
+                // FIXME: 加返回值会影响性能，但是避免了颜色少时死循环的问题
+                if (!reduceTree()) // 当 maxCount <= 7 时，很容易触发
+                    break;
+            }
         }
     }
 }
@@ -103,12 +109,12 @@ void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
             // 创建下一层
             OctreeNode *tmp = node->children[idx] = new OctreeNode;
             memset(tmp, 0, sizeof(OctreeNode));
-            if (level == 7)
+            if (level == 7) // 最后一层
             {
                 tmp->isLeaf = true;
                 leafCount++;
             }
-            else
+            else // 不是最后一层
             {
                 reducible[level].push_front(tmp); // 放入缩减的列表中
             }
@@ -118,14 +124,14 @@ void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
     }
 }
 
-void ColorOctree::reduceTree()
+bool ColorOctree::reduceTree()
 {
     // 找到最深的叶子
     int lv = 6; // 从最后第2层（第7层）开始合并自己的叶子
     while (reducible[lv].empty() && lv >= 0)
         lv--;
     if (lv < 0)
-        return;
+        return false;
 
     // 移除该节点
     OctreeNode *node = reducible[lv].front();
@@ -154,6 +160,7 @@ void ColorOctree::reduceTree()
     node->blue = b;
     node->pixelCount = count;
     leafCount++;
+    return true;
 }
 
 /**

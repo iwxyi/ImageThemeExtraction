@@ -48,11 +48,11 @@ public:
 
 private:
     void addColor(OctreeNode *node, RGB* color, int level);
-    void reduceTree();
+    bool reduceTree();
     void colorStats(OctreeNode *node, QList<ColorCount> *colors);
 
 private:
-    OctreeNode *root;
+    OctreeNode *root = nullptr;
     QList<OctreeNode *> reducible[7];
     int leafCount = 0; // 叶子数量
     int maxCount = 20; // 最终得到结果的最大值
