@@ -29,7 +29,7 @@ public:
                     delete children[i];
         }
 
-        int red = 0, green = 0, blue = 0;
+        long long red = 0, green = 0, blue = 0; // 许多点累加的结果，会非常大
         bool isLeaf = false;
         int pixelCount = 0;
         OctreeNode *children[8] = {};
@@ -43,7 +43,7 @@ public:
         int colorValue = 0; // 对应int值
     };
 
-    void buildTree(QImage image);
+    void buildTree(QImage image, int maxCount = 20);
     QList<ColorCount *> result();
 
 private:

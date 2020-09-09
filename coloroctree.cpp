@@ -28,8 +28,13 @@ ColorOctree::~ColorOctree()
         delete root;
 }
 
-void ColorOctree::buildTree(QImage image)
+/**
+ * 构建八叉树
+ */
+void ColorOctree::buildTree(QImage image, int maxCount)
 {
+    this->maxCount = maxCount;
+
     // 先转换为颜色，再添加到八叉树节点
     // 据说使用按行读取的方式能加快效率
     int w = image.width(), h = image.height();
@@ -40,13 +45,18 @@ void ColorOctree::buildTree(QImage image)
         {
             int r = qRed(line[x]), g = qGreen(line[x]), b = qBlue(line[x]);
             RGB rgb{r, g, b};
+            // 添加颜色到八叉树
             addColor(root, &rgb, 0);
-            while (leafCount > maxCount)
-                reduceTree();
         }
     }
+    // 合并颜色
+    while (leafCount > maxCount)
+        reduceTree();
 }
 
+/**
+ * 返回结果
+ */
 QList<ColorOctree::ColorCount*> ColorOctree::result()
 {
     QList<ColorCount*> counts;
@@ -63,14 +73,14 @@ QList<ColorOctree::ColorCount*> ColorOctree::result()
 
 void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
 {
-    if (node->isLeaf)
+    if (node->isLeaf) // 加到叶子节点
     {
         node->pixelCount++;
         node->red += color->red;
         node->green += color->green;
         node->blue += color->blue;
     }
-    else
+    else // 加到下几层的叶子节点
     {
         /**
          * eg.
@@ -83,11 +93,11 @@ void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
         unsigned char r = (color->red >> (7 - level)) & 1;
         unsigned char g = (color->green >> (7 - level)) & 1;
         unsigned char b = (color->blue >> (7 - level)) & 1;
-
         int idx = (r << 2) + (g << 1) + b;
 
         if (!node->children[idx])
         {
+            // 创建下一层
             OctreeNode *tmp = node->children[idx] = new OctreeNode;
             memset(tmp, 0, sizeof(OctreeNode));
             if (level == 7)
@@ -97,7 +107,7 @@ void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
             }
             else
             {
-                reducible[level].push_front(tmp);
+                reducible[level].push_front(tmp); // 放入缩减的列表中
             }
         }
 
@@ -108,7 +118,7 @@ void ColorOctree::addColor(ColorOctree::OctreeNode *node, RGB *color, int level)
 void ColorOctree::reduceTree()
 {
     // 找到最深的叶子
-    int lv = 6;
+    int lv = 6; // 从最后第2层（第7层）开始合并自己的叶子
     while (reducible[lv].empty() && lv >= 0)
         lv--;
     if (lv < 0)
@@ -118,8 +128,8 @@ void ColorOctree::reduceTree()
     OctreeNode *node = reducible[lv].front();
     reducible[lv].pop_front();
 
-    // 合并子节点
-    int r = 0, g = 0, b = 0;
+    // 合并该节点的子节点
+    long long r = 0, g = 0, b = 0;
     int count = 0;
     for (int i = 0; i < 8; i++)
     {
