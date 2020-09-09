@@ -3,14 +3,14 @@
 /**
  * 图片转换为颜色集
  */
-QColor ImageUtil::getImageAverageColor(QImage image, int maxPool)
+QColor ImageUtil::getImageAverageColor(QImage image, int maxSize)
 {
     int hCount = image.width();
     int vCount = image.height();
 
-    if (hCount * vCount > maxPool) // 数量过大，按比例缩减
+    if (hCount > maxSize || vCount > maxSize) // 数量过大，按比例缩减
     {
-        double prop = (double)maxPool / (hCount * vCount);
+        double prop = (double)maxSize / qMax(hCount, vCount);
         image.scaledToWidth(image.width() * prop); // 缩放到最大大小
     }
 
@@ -39,18 +39,39 @@ QColor ImageUtil::getImageAverageColor(QImage image, int maxPool)
 /** 
  * 获取图片中所有的颜色
  */
-ColorList ImageUtil::extractImageThemeColors(QImage image, int count)
+QList<ColorOctree::ColorCount> ImageUtil::extractImageThemeColors(QImage image, int count)
 {
-    auto octree = ColorOctree(image, IMAGE_CALC_PIXEL_MAX_COUNT);
+    auto octree = ColorOctree(image, IMAGE_CALC_PIXEL_MAX_SIZE, count);
     auto result = octree.result();
 
-    // 结果转换为 QColor
-    QList<QColor> colors;
-    foreach (auto r, result)
-    {
-        qDebug() << "颜色结果：" << r->red << r->green << r->blue << r->count;
-        colors.append(QColor(r->red, r->green, r->blue));
-    }
+    if (!result.size() || result.first().count <= 0)
+        return result;
 
-    return colors;
+    // 过滤太少的颜色
+    /*int maxCount = result.first().count;
+    int minCount = maxCount / 1000; // 小于最大项1‰的都去掉
+    while (result.last().count < minCount)
+        result.removeLast();*/
+
+    return result;
+}
+
+/**
+ * 获取反色
+ */
+QColor ImageUtil::getInvertColor(QColor color)
+{
+    auto getInvert = [=](int c) -> int{
+        if (c < 96 || c > 160)
+            return 255 - c;
+        else if (c < 128)
+            return 255;
+        else
+            return 0;
+    };
+
+    color.setRed(getInvert(color.red()));
+    color.setGreen(getInvert(color.green()));
+    color.setBlue(getInvert(color.blue()));
+    return color;
 }

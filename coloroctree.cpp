@@ -7,19 +7,19 @@ ColorOctree::ColorOctree()
     leafCount = 0;
 }
 
-ColorOctree::ColorOctree(QImage image, int maxPool) : ColorOctree()
+ColorOctree::ColorOctree(QImage image, int maxSize, int maxCount) : ColorOctree()
 {
     // 缩减尺寸
-    int hCount = image.width();
-    int vCount = image.height();
-    if (hCount * vCount > maxPool) // 数量过大，按比例缩减
+    long long hCount = image.width();
+    long long vCount = image.height();
+    if (hCount > maxSize || vCount > maxSize) // 数量过大，按比例缩减
     {
-        double prop = (double)maxPool / (hCount * vCount);
-        image.scaledToWidth(image.width() * prop); // 缩放到最大大小
+        double prop = (double)maxSize / qMax(hCount, vCount);
+        image = image.scaledToWidth(image.width() * prop); // 缩放到最大大小
     }
 
     // 开始建树
-    buildTree(image);
+    buildTree(image, maxCount);
 }
 
 ColorOctree::~ColorOctree()
@@ -47,26 +47,29 @@ void ColorOctree::buildTree(QImage image, int maxCount)
             RGB rgb{r, g, b};
             // 添加颜色到八叉树
             addColor(root, &rgb, 0);
+
+            // 合并颜色
+            // 有两个选择：addColor完就减（快），全部add再减（慢）
+            // 但是这结果一模一样……
+            while (leafCount > maxCount)
+                reduceTree();
         }
     }
-    // 合并颜色
-    while (leafCount > maxCount)
-        reduceTree();
 }
 
 /**
  * 返回结果
  */
-QList<ColorOctree::ColorCount*> ColorOctree::result()
+QList<ColorOctree::ColorCount> ColorOctree::result()
 {
-    QList<ColorCount*> counts;
+    QList<ColorCount> counts;
     colorStats(root, &counts);
-    std::sort(counts.begin(), counts.end(), [=](ColorCount *a, ColorCount *b) {
-        if (a->count > b->count)
+    std::sort(counts.begin(), counts.end(), [=](ColorCount a, ColorCount b) {
+        if (a.count > b.count)
             return true;
-        if (a->count < b->count)
+        if (a.count < b.count)
             return false;
-        return strcmp(a->color, b->color) < 0;
+        return strcmp(a.color, b.color) < 0;
     });
     return counts;
 }
@@ -156,7 +159,7 @@ void ColorOctree::reduceTree()
 /**
  * 获取颜色结果
  */
-void ColorOctree::colorStats(ColorOctree::OctreeNode *node, QList<ColorOctree::ColorCount *> *colors)
+void ColorOctree::colorStats(ColorOctree::OctreeNode *node, QList<ColorOctree::ColorCount> *colors)
 {
     if (node->isLeaf)
     {
@@ -164,13 +167,13 @@ void ColorOctree::colorStats(ColorOctree::OctreeNode *node, QList<ColorOctree::C
         int g = node->green / node->pixelCount;
         int b = node->blue / node->pixelCount;
 
-        ColorCount *cnt = new ColorCount;
-        sprintf(cnt->color, "%.2X%.2X%.2X", r, g, b);
-        cnt->count = node->pixelCount;
-        cnt->colorValue = (r << 16) + (g << 8) + b;
-        cnt->red = r;
-        cnt->green = g;
-        cnt->blue = b;
+        ColorCount cnt;
+        sprintf(cnt.color, "%.2X%.2X%.2X", r, g, b);
+        cnt.count = node->pixelCount;
+        cnt.colorValue = (r << 16) + (g << 8) + b;
+        cnt.red = r;
+        cnt.green = g;
+        cnt.blue = b;
 
         colors->push_back(cnt);
         return;

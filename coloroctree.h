@@ -12,7 +12,7 @@ class ColorOctree
 {
 public:
     ColorOctree();
-    ColorOctree(QImage image, int maxPool = 250000);
+    ColorOctree(QImage image, int maxPool = 250000, int maxCount = 20);
     ~ColorOctree();
 
     struct RGB
@@ -44,19 +44,18 @@ public:
     };
 
     void buildTree(QImage image, int maxCount = 20);
-    QList<ColorCount *> result();
+    QList<ColorCount> result();
 
 private:
     void addColor(OctreeNode *node, RGB* color, int level);
     void reduceTree();
-    void colorStats(OctreeNode *node, QList<ColorCount *> *colors);
+    void colorStats(OctreeNode *node, QList<ColorCount> *colors);
 
 private:
     OctreeNode *root;
     QList<OctreeNode *> reducible[7];
-    int leafCount = 0;
-    int maxCount = 20;
-
+    int leafCount = 0; // 叶子数量
+    int maxCount = 20; // 最终得到结果的最大值
 };
 
 #endif // COLOROCTREE_H

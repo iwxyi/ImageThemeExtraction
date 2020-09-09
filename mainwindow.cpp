@@ -29,9 +29,15 @@ void MainWindow::on_pushButton_clicked()
 
     ui->listWidget->clear();
     auto colors = ImageUtil::extractImageThemeColors(pixmap.toImage(), 20);
+    if (!colors.size())
+        return ;
+    int maxCount = colors.first().count;
     foreach (auto color, colors)
     {
         auto item = new QListWidgetItem(ui->listWidget);
-        item->setBackground(color);
+        QColor qc(color.red, color.green, color.blue);
+        item->setText(QString::number(color.count * 100 / maxCount) + "%");
+        item->setBackground(qc);
+        item->setForeground(ImageUtil::getInvertColor(qc));
     }
 }
