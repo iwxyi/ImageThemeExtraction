@@ -48,6 +48,5 @@ void MainWindow::on_pushButton_clicked()
     pa.setColor(QPalette::Background, bg);
     pa.setColor(QPalette::Text, fg);
     pa.setColor(QPalette::WindowText, fg);
-    pa.setColor(QPalette::ButtonText, fg);
     setPalette(pa);
 }
