@@ -197,13 +197,13 @@ bool ImageUtil::getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg
             continue;
 
         int r = c.red, g = c.green, b = c.blue, n = c.count;
-        qint64 variant1 = (r - bg->red()) * (r - bg->red())
+        qint64 variantBg = (r - bg->red()) * (r - bg->red())
                 + (g - bg->green()) * (g - bg->green())
                 + (b - bg->blue()) * (b - bg->blue());
-        qint64 variant2 = (r - fg->red()) * (r - fg->red())
+        qint64 variantFg = (r - fg->red()) * (r - fg->red())
                 + (g - fg->green()) * (g - fg->green())
                 + (b - fg->blue()) * (b - fg->blue());
-        qint64 sum = variant1 + variant2;
+        qint64 sum = variantBg + variantFg * 2; // 文字占比比较大
         if (sum > maxVariance)
         {
             maxVariance = sum;
