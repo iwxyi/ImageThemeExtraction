@@ -41,6 +41,11 @@ public:
         char color[7] = {}; // 16进制字符串
         int red = 0, green = 0, blue = 0;
         int colorValue = 0; // 对应int值
+
+        QColor toColor() const
+        {
+            return QColor(red, green, blue);
+        }
     };
 
     void buildTree(QImage image, int maxCount = 20);

@@ -24,7 +24,7 @@ void MainWindow::on_pushButton_clicked()
     if (path.isEmpty())
         return ;
 
-    QPixmap pixmap(path);
+    QPixmap pixmap(path, "1"); // 不加参数二有些图片读不出来？
     ui->label->setPixmap(pixmap);
 
     ui->listWidget->clear();
@@ -40,4 +40,14 @@ void MainWindow::on_pushButton_clicked()
         item->setBackground(qc);
         item->setForeground(ImageUtil::getInvertColor(qc));
     }
+
+    QColor bg, fg;
+    ImageUtil::getBgFgColor(colors, &bg, &fg);
+
+    QPalette pa;
+    pa.setColor(QPalette::Background, bg);
+    pa.setColor(QPalette::Text, fg);
+    pa.setColor(QPalette::WindowText, fg);
+    pa.setColor(QPalette::ButtonText, fg);
+    setPalette(pa);
 }

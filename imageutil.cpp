@@ -115,3 +115,52 @@ QColor ImageUtil::getInvertColor(QColor color)
     color.setBlue(getInvert(color.blue()));
     return color;
 }
+
+/**
+ * 获取一张图片中应有的背景色、前景色
+ * 背景色是颜色占比最高的
+ * 前景色是与其余颜色的(色差*数量)方差和最大的
+ * @return 颜色提取是否成功
+ */
+bool ImageUtil::getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg)
+{
+    Q_ASSERT(bg && fg);
+    if (!colors.size())
+    {
+        *bg = Qt::white;
+        *fg = Qt::black;
+        return false;
+    }
+
+    int maxIndex = -1;
+    qint64 maxVariance = 0;
+    int size = colors.size();
+    for (int i = 0; i < size; i++)
+    {
+        ColorOctree::ColorCount c = colors.at(i);
+        int r = c.red, g = c.green, b = c.blue, n = c.count;
+
+        qint64 sumVariance = 0;
+        for (int j = 0; j < size; j++)
+        {
+            if (j == i)
+                continue;
+            ColorOctree::ColorCount c2 = colors.at(j);
+            qint64 variant = (r - c2.red) * (r - c2.red)
+                    + (g - c2.green) * (g - c2.green)
+                    + (b - c2.blue) * (b - c2.blue);
+            variant *= c2.count;
+            sumVariance += variant;
+        }
+
+        if (sumVariance > maxVariance)
+        {
+            maxVariance = sumVariance;
+            maxIndex = i;
+        }
+    }
+
+    *bg = colors.first().toColor();
+    *fg = colors.at(maxIndex).toColor();
+    return true;
+}

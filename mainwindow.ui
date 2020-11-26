@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>646</width>
+    <height>564</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,6 +46,13 @@
      </layout>
     </item>
     <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>点击上面选择图片按钮，自动获取主题色</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="topMargin">
        <number>0</number>
@@ -59,7 +66,7 @@
          </size>
         </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string>请选择图片</string>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -85,7 +92,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>646</width>
      <height>23</height>
     </rect>
    </property>

@@ -17,6 +17,8 @@ public:
     static QList<QColor> extractImageThemeColorsInPalette(QImage image, QList<QColor> paletteColors, int needCount);
 
     static QColor getInvertColor(QColor color);
+
+    static bool getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg);
 };
 
 #endif // PIXMAPUTIL_H
