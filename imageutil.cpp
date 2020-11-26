@@ -132,6 +132,13 @@ bool ImageUtil::getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, 
         return false;
     }
 
+    if (colors.size() == 1)
+    {
+        *bg = colors.first().toColor();
+        *fg = getInvertColor(*bg);
+        return false;
+    }
+
     int maxIndex = -1;
     qint64 maxVariance = 0;
     int size = colors.size();
@@ -162,5 +169,48 @@ bool ImageUtil::getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, 
 
     *bg = colors.first().toColor();
     *fg = colors.at(maxIndex).toColor();
+    return true;
+}
+
+/**
+ * 同上，外加一个辅助色
+ */
+bool ImageUtil::getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg, QColor *sg)
+{
+    // 调用上面先获取背景色、前景色
+    if (!getBgFgColor(colors, bg, fg))
+        return false;
+
+    // 再获取合适的辅助色
+    if (colors.size() == 2)
+    {
+        *sg = getInvertColor(*fg); // 文字取反
+        return false;
+    }
+
+    int maxIndex = -1;
+    qint64 maxVariance = 0;
+    for (int i = 0; i < colors.size(); i++)
+    {
+        ColorOctree::ColorCount c = colors.at(i);
+        if (c.toColor() == *bg || c.toColor() == *fg)
+            continue;
+
+        int r = c.red, g = c.green, b = c.blue, n = c.count;
+        qint64 variant1 = (r - bg->red()) * (r - bg->red())
+                + (g - bg->green()) * (g - bg->green())
+                + (b - bg->blue()) * (b - bg->blue());
+        qint64 variant2 = (r - fg->red()) * (r - fg->red())
+                + (g - fg->green()) * (g - fg->green())
+                + (b - fg->blue()) * (b - fg->blue());
+        qint64 sum = variant1 + variant2;
+        if (sum > maxVariance)
+        {
+            maxVariance = sum;
+            maxIndex = i;
+        }
+    }
+
+    *sg = colors.at(maxIndex).toColor();
     return true;
 }

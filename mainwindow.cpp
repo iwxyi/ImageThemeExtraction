@@ -41,12 +41,15 @@ void MainWindow::on_pushButton_clicked()
         item->setForeground(ImageUtil::getInvertColor(qc));
     }
 
-    QColor bg, fg;
-    ImageUtil::getBgFgColor(colors, &bg, &fg);
+    QColor bg, fg, sg;
+    ImageUtil::getBgFgSgColor(colors, &bg, &fg, &sg);
 
     QPalette pa;
     pa.setColor(QPalette::Background, bg);
     pa.setColor(QPalette::Text, fg);
     pa.setColor(QPalette::WindowText, fg);
     setPalette(pa);
+
+    ui->label_2->setStyleSheet("padding: 10px; background: " + QVariant(sg).toString() + "; color:" + QVariant(fg).toString() + ";");
+    qDebug() << bg << fg << sg;
 }

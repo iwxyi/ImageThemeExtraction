@@ -19,6 +19,8 @@ public:
     static QColor getInvertColor(QColor color);
 
     static bool getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg);
+
+    static bool getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg, QColor *sg);
 };
 
 #endif // PIXMAPUTIL_H
