@@ -38,6 +38,7 @@ QColor ImageUtil::getImageAverageColor(QImage image, int maxSize)
 
 /** 
  * 获取图片中所有的颜色
+ * 如果要求数量小于8，那么会丢弃数量少的颜色
  */
 QList<ColorOctree::ColorCount> ImageUtil::extractImageThemeColors(QImage image, int count)
 {
@@ -50,7 +51,7 @@ QList<ColorOctree::ColorCount> ImageUtil::extractImageThemeColors(QImage image, 
     // 可以过滤太少的颜色，看情况开关
     int maxCount = result.first().count;
     int minCount = maxCount / 1000; // 小于最大项1‰的都去掉
-    while (result.last().count < minCount)
+    while (result.last().count < minCount || result.size() > count)
         result.removeLast();
 
     return result;
