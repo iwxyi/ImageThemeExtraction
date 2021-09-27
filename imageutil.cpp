@@ -1,3 +1,4 @@
+#include <math.h>
 #include "imageutil.h"
 
 /**
@@ -38,7 +39,6 @@ QColor ImageUtil::getImageAverageColor(QImage image, int maxSize)
 
 /** 
  * 获取图片中所有的颜色
- * 如果要求数量小于8，那么会丢弃数量少的颜色
  */
 QList<ColorOctree::ColorCount> ImageUtil::extractImageThemeColors(QImage image, int count)
 {
@@ -154,9 +154,9 @@ bool ImageUtil::getBgFgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, 
             if (j == i)
                 continue;
             ColorOctree::ColorCount c2 = colors.at(j);
-            qint64 variant = (r - c2.red) * (r - c2.red)
-                    + (g - c2.green) * (g - c2.green)
-                    + (b - c2.blue) * (b - c2.blue);
+            qint64 variant = 3 * (r - c2.red) * (r - c2.red)
+                    + 4 * (g - c2.green) * (g - c2.green)
+                    + 2 * (b - c2.blue) * (b - c2.blue);
             variant *= c2.count;
             sumVariance += variant;
         }
@@ -198,12 +198,12 @@ bool ImageUtil::getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg
             continue;
 
         int r = c.red, g = c.green, b = c.blue, n = c.count;
-        qint64 variantBg = (r - bg->red()) * (r - bg->red())
-                + (g - bg->green()) * (g - bg->green())
-                + (b - bg->blue()) * (b - bg->blue());
-        qint64 variantFg = (r - fg->red()) * (r - fg->red())
-                + (g - fg->green()) * (g - fg->green())
-                + (b - fg->blue()) * (b - fg->blue());
+        qint64 variantBg = 3 * (r - bg->red()) * (r - bg->red())
+                + 4 * (g - bg->green()) * (g - bg->green())
+                + 2 * (b - bg->blue()) * (b - bg->blue());
+        qint64 variantFg = 3 * (r - fg->red()) * (r - fg->red())
+                + 4 * (g - fg->green()) * (g - fg->green())
+                + 2 * (b - fg->blue()) * (b - fg->blue());
         qint64 sum = variantBg + variantFg * 2; // 文字占比比较大
         if (sum > maxVariance)
         {
@@ -214,4 +214,127 @@ bool ImageUtil::getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg
 
     *sg = colors.at(maxIndex).toColor();
     return true;
+}
+
+/**
+ * 同上
+ * 获取四种颜色：背景色、前景色（文字）、辅助背景色（与文字色差大）、辅助前景色（与背景色差大）
+ */
+bool ImageUtil::getBgFgSgColor(QList<ColorOctree::ColorCount> colors, QColor *bg, QColor *fg, QColor *sbg, QColor *sfg)
+{
+    // 调用上面先获取背景色、前景色
+    if (!getBgFgColor(colors, bg, fg))
+        return false;
+
+    // 再获取合适的辅助色
+    if (colors.size() == 2)
+    {
+        *sbg = getInvertColor(*fg); // 文字取反
+        *sfg = getInvertColor(*bg); // 背景取反
+        return false;
+    }
+
+    // 计算辅助背景色
+    int maxIndex = -1;
+    qint64 maxVariance = 0;
+    for (int i = 0; i < colors.size(); i++)
+    {
+        ColorOctree::ColorCount c = colors.at(i);
+        if (c.toColor() == *bg || c.toColor() == *fg)
+            continue;
+
+        int r = c.red, g = c.green, b = c.blue, n = c.count;
+        qint64 variantBg = 3 * (r - bg->red()) * (r - bg->red())
+                + 4 * (g - bg->green()) * (g - bg->green())
+                + 2 * (b - bg->blue()) * (b - bg->blue());
+        qint64 variantFg = 3 * (r - fg->red()) * (r - fg->red())
+                + 4 * (g - fg->green()) * (g - fg->green())
+                + 2 * (b - fg->blue()) * (b - fg->blue());
+
+        qint64 variant = variantBg + variantFg * 2; // 文字占比比较大
+        if (variant > maxVariance)
+        {
+            maxVariance = variant;
+            maxIndex = i;
+        }
+    }
+    *sbg = colors.at(maxIndex).toColor();
+
+    // 根据辅助背景色计算辅助前景色
+    maxIndex = -1;
+    maxVariance = 0;
+    for (int i = 0; i < colors.size(); i++)
+    {
+        ColorOctree::ColorCount c = colors.at(i);
+        if (c.toColor() == *sbg)
+            continue;
+
+        int r = c.red, g = c.green, b = c.blue, n = c.count;
+        qint64 variant = 3 * (r - sbg->red()) * (r - sbg->red())
+                + 4 * (g - sbg->green()) * (g - sbg->green())
+                + 2 * (b - sbg->blue()) * (b - sbg->blue());
+
+        if (variant > maxVariance)
+        {
+            maxVariance = variant;
+            maxIndex = i;
+        }
+    }
+    *sfg = colors.at(maxIndex).toColor();
+    return true;
+}
+
+/// 获取色差最大的一项
+/// 由于RGB颜色空间不是均匀颜色空间,按照空间距离得到的色差并不完全符合人的视觉,
+/// 在实际应用时经常采取给各颜色分量加上一定权值的办法，一般加权取值(3,4,2)
+QColor ImageUtil::getFastestColor(QColor bg, QList<QColor> palette)
+{
+    qint64 maxi = -1;
+    QColor maxiColor;
+    int rr = bg.red(), gg = bg.green(), bb = bg.blue();
+    foreach (auto c, palette)
+    {
+        int r = c.red(), g = c.green(), b = c.blue();
+        qint64 delta = 3 * (r - rr) * (r - rr)
+                + 4 * (g - gg) * (g - gg)
+                + 2 * (b - bb) * (b - bb);
+        if (delta > maxi)
+        {
+            maxi = delta;
+            maxiColor = c;
+        }
+    }
+    return maxiColor;
+}
+
+/// 获取色差最大的一项
+/// 但是也会参考数量，数量越多权重越高
+QColor ImageUtil::getFastestColor(QColor bg, QList<ColorOctree::ColorCount> palette, int enableCount)
+{
+    qint64 maxi = -1;
+    QColor maxiColor = QColor::Invalid;
+    int rr = bg.red(), gg = bg.green(), bb = bg.blue();
+    foreach (auto c, palette)
+    {
+        int r = c.red, g = c.green, b = c.blue;
+        qint64 delta = 3 * (r - rr) * (r - rr)
+                + 4 * (g - gg) * (g - gg)
+                + 2 * (b - bb) * (b - bb);
+        if (enableCount == 1)
+            delta *= c.count;
+        else if (enableCount == 2)
+            delta *= qint64(sqrt(c.count + 1));
+        if (delta > maxi)
+        {
+            maxi = delta;
+            maxiColor = c.toColor();
+        }
+    }
+    return maxiColor;
+}
+
+/// 返回随机深色调
+QColor ImageUtil::randomColor()
+{
+    return QColor::fromHsl(rand()%360,rand()%256,rand()%200);
 }
